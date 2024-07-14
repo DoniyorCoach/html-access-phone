@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Phone Verification</title>
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin: 0;
+                font-family: Arial, sans-serif;
+                background: #f0f0f0;
+            }
+            .container {
+                background: #fff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                text-align: center;
+                width: 500px;
+            }
+            .container input,
+            .container button {
+                padding: 10px;
+                margin: 10px 0;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                font-size: 16px;
+                outline: none;
+            }
+            .container button {
+                background-color: #007bff;
+                color: white;
+                cursor: pointer;
+                border: none;
+            }
+            .container button:disabled {
+                background-color: #ccc;
+            }
+            .input-valid {
+                border: 2px solid green !important;
+            }
+            .input-invalid {
+                border: 2px solid red !important;
+            }
+            .message {
+                margin-top: 10px;
+                font-size: 16px;
+                color: green;
+            }
+            .loading {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin: 10px 0;
+            }
+            .loader {
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #007bff;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                animation: spin 1s linear infinite;
+            }
+            .hidden {
+                display: none;
+            }
+            #verifyPhoneButton {
+                background: none;
+                color: blue;
+                font-size: 14px;
+            }
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <input
+                type="text"
+                id="phoneInput"
+                placeholder="Введите номер телефона"
+            />
+            <button id="verifyPhoneButton">Подтвердить номер телефона</button>
+            <div id="loadingSection" class="loading hidden">
+                <div class="loader"></div>
+            </div>
+            <div id="codeSection" class="hidden">
+                <input type="text" id="codeInput" placeholder="Введите код" />
+                <button id="submitButton" disabled>Отправить</button>
+            </div>
+            <div id="message" class="message"></div>
+        </div>
+
+        <script>
+            const verifyPhoneButtonEl =
+                document.getElementById("verifyPhoneButton");
+            verifyPhoneButtonEl.addEventListener("click", async function () {
+                const phoneInput = document.getElementById("phoneInput");
+                const loadingSection =
+                    document.getElementById("loadingSection");
+                const codeSection = document.getElementById("codeSection");
+
+                // Показать индикатор загрузки и скрыть поле для ввода кода и кнопку отправки
+                loadingSection.classList.remove("hidden");
+                codeSection.classList.add("hidden");
+
+                // Имитация отправки запроса на сервер
+                const response = await fakeServerRequest(phoneInput.value);
+
+                // Скрыть индикатор загрузки и показать поле для ввода кода и кнопку отправки
+                loadingSection.classList.add("hidden");
+                codeSection.classList.remove("hidden");
+                verifyPhoneButtonEl.classList.add("hidden");
+                phoneInput.disabled = true;
+
+                document
+                    .getElementById("codeInput")
+                    .addEventListener("input", function () {
+                        const codeValue =
+                            document.getElementById("codeInput").value;
+                        const codeInputElem =
+                            document.getElementById("codeInput");
+                        const submitButtonElem =
+                            document.getElementById("submitButton");
+
+                        if (codeValue === response) {
+                            codeInputElem.classList.remove("input-invalid");
+                            codeInputElem.classList.add("input-valid");
+                            submitButtonElem.disabled = false;
+                        } else {
+                            codeInputElem.classList.remove("input-valid");
+                            codeInputElem.classList.add("input-invalid");
+                            submitButtonElem.disabled = true;
+                        }
+
+                        console.log(codeValue);
+
+                        if (!codeValue) {
+                            codeInputElem.classList.remove("input-invalid");
+                            codeInputElem.classList.remove("input-valid");
+                        }
+                    });
+            });
+
+            document
+                .getElementById("submitButton")
+                .addEventListener("click", function () {
+                    document.getElementById("message").innerText =
+                        "Отправлено успешно";
+                });
+
+            function fakeServerRequest(phone) {
+                return new Promise((resolve) => {
+                    setTimeout(() => {
+                        // Генерация случайного кода для имитации ответа сервера
+                        resolve("1234");
+                    }, 2000);
+                });
+            }
+        </script>
+    </body>
+</html>

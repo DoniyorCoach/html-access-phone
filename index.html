@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Phone Verification</title>
+        <link
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css"
+        />
+        <style>
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin: 0;
+                font-family: Arial, sans-serif;
+                background: #f0f0f0;
+            }
+            .container {
+                background: #fff;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+                text-align: center;
+                width: 600px;
+            }
+            .container input,
+            .container button {
+                padding: 10px;
+                margin: 10px 0;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                font-size: 16px;
+                outline: none;
+            }
+            .container button {
+                background-color: #007bff;
+                color: white;
+                cursor: pointer;
+                border: none;
+            }
+            .container button:disabled {
+                background-color: #ccc;
+            }
+            .input-valid {
+                border-bottom: 2px solid green !important;
+            }
+            .input-invalid {
+                border-bottom: 2px solid red !important;
+            }
+            .message {
+                margin-top: 20px;
+                font-size: 18px;
+                color: gray;
+            }
+            .loading {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin: 10px 0;
+            }
+            .loader {
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #007bff;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                animation: spin 1s linear infinite;
+            }
+            .hidden {
+                display: none;
+            }
+            #verifyPhoneButton {
+                background: none;
+                color: blue;
+                font-size: 14px;
+            }
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+            #charCount {
+                margin-top: 10px;
+                font-size: 14px;
+                color: #666;
+            }
+            #codeSection {
+                margin-top: 20px;
+                border-radius: 0;
+            }
+            #codeInput {
+                border: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <input id="phoneInput" placeholder="Введите номер телефона" />
+            <div id="charCount" class="hidden"></div>
+            <button id="verifyPhoneButton" disabled>
+                Подтвердить номер телефона
+            </button>
+            <div id="loadingSection" class="loading hidden">
+                <div class="loader"></div>
+            </div>
+            <div id="codeSection" class="hidden">
+                <input type="text" id="codeInput" placeholder="Введите код" />
+                <button id="submitButton" disabled>Отправить</button>
+            </div>
+            <div id="message" class="message"></div>
+        </div>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+        <script>
+            const phoneInputEl = document.getElementById("phoneInput");
+            const verifyPhoneButtonEl =
+                document.getElementById("verifyPhoneButton");
+            const loadingSection = document.getElementById("loadingSection");
+            const codeSection = document.getElementById("codeSection");
+            const charCountEl = document.getElementById("charCount");
+
+            const messageElem = document.getElementById("message");
+
+            // Инициализация intl-tel-input
+            const iti = window.intlTelInput(phoneInputEl, {
+                initialCountry: "ru",
+                preferredCountries: ["ru"],
+                separateDialCode: true,
+                utilsScript:
+                    "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
+            });
+
+            phoneInputEl.addEventListener("input", function () {
+                const phoneNumber = iti.getNumber();
+                const phoneNumberValid = iti.isValidNumber();
+
+                if (phoneNumberValid) {
+                    phoneInputEl.classList.add("input-valid");
+                    phoneInputEl.classList.remove("input-invalid");
+                    verifyPhoneButtonEl.disabled = false;
+                } else {
+                    phoneInputEl.classList.add("input-invalid");
+                    phoneInputEl.classList.remove("input-valid");
+                    verifyPhoneButtonEl.disabled = true;
+                }
+            });
+
+            verifyPhoneButtonEl.addEventListener("click", async function () {
+                loadingSection.classList.remove("hidden");
+                codeSection.classList.add("hidden");
+
+                const { status, data } = await getAuthCodeFromServer(
+                    iti.getNumber(),
+                );
+
+                loadingSection.classList.add("hidden");
+                verifyPhoneButtonEl.classList.add("hidden");
+
+                if (status !== 200) {
+                    messageElem.innerText = data;
+                    return;
+                }
+
+                codeSection.classList.remove("hidden");
+                phoneInputEl.disabled = true;
+                phoneInputEl.classList.remove("input-valid");
+
+                document
+                    .getElementById("codeInput")
+                    .addEventListener("input", function () {
+                        const codeValue =
+                            document.getElementById("codeInput").value;
+                        const codeInputElem =
+                            document.getElementById("codeInput");
+                        const submitButtonElem =
+                            document.getElementById("submitButton");
+
+                        if (codeValue === data) {
+                            codeInputElem.classList.remove("input-invalid");
+                            codeInputElem.classList.add("input-valid");
+                            submitButtonElem.disabled = false;
+                        } else {
+                            codeInputElem.classList.remove("input-valid");
+                            codeInputElem.classList.add("input-invalid");
+                            submitButtonElem.disabled = true;
+                        }
+
+                        if (!codeValue) {
+                            codeInputElem.classList.remove("input-invalid");
+                            codeInputElem.classList.remove("input-valid");
+                        }
+                    });
+            });
+
+            document
+                .getElementById("submitButton")
+                .addEventListener("click", function () {
+                    messageElem.innerText = "Успешно отправлено";
+                });
+
+            const getAuthCodeFromServer = async (phone) => {
+                const userIp = await fetch("https://jsonip.com");
+                const { ip } = await userIp.json();
+
+                const authResponse = await fetch(
+                    "http://localhost:5000/api/auth-code",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json;charset=utf-8",
+                        },
+                        body: JSON.stringify({ number: phone, ip }),
+                    },
+                );
+                return authResponse.json();
+            };
+        </script>
+    </body>
+</html>
